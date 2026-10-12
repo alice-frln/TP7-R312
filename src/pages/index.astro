@@ -1,27 +1,81 @@
 ---
-import "leaflet/dist/leaflet.css";
 import Layout from "../layouts/Layout.astro";
+import populationMain from "../assets/populationmain.json";
+
+const listePeriode = [
+  ...new Set(populationMain?.map((d) => d.Période)),
+].reverse();
 ---
 
 <Layout>
-  <h1 class="text-2xl">Liste des établissements</h1>
-  <div id="map" style="height: 600px;"></div>
+  <select id="periode">
+    {listePeriode.map((p, i) => <option selected={i === 0}>{p}</option>)}
+  </select>
+  <div id="plot"></div>
 
   <script>
-    import listeEtablissements from "../assets/ListeEtablissement.json";
-    import L from "leaflet";
+    import * as Plot from "@observablehq/plot";
+    import departements from "../assets/departements.json";
+    import populationMain from "../assets/populationmain.json";
 
-    const map = L.map("map").setView([46.6033, 1.883], 6);
+    const elmYear = document.getElementById("periode") as HTMLSelectElement;
+    const plotContainer = document.getElementById("plot") as HTMLDivElement;
+    let selectedYear = Number(elmYear.value);
+    let selectedSex = "Total";
+    let selectedAge = "Total";
 
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
+    const renderPlot = () => {
+      const plot = Plot.plot({
+        projection: {
+          type: "mercator",
+          domain: departements,
+        },
+        color: {
+          type: "quantile",
+          n: 8,
+          scheme: "Greens",
+          label: "Population en centaine de milliers",
+          legend: true,
+          transform: (d) => Math.round(d / 100000),
+        },
+        marks: [
+          Plot.geo(departements, {
+            fill: (d) => {
+              const deptName = d.properties.nom;
+              const popData = populationMain.find(
+                (p) =>
+                  p.Géographie === deptName &&
+                  p.Période === selectedYear &&
+                  p.Sexe === selectedSex &&
+                  p["Âge"] === selectedAge,
+              );
+              return popData.Valeur;
+            },
+            stroke: "#999",
+            title: (d) => {
+              const deptName = d.properties.nom;
+              const popData = populationMain.find(
+                (p) =>
+                  p.Géographie === deptName &&
+                  p.Période === selectedYear &&
+                  p.Sexe === selectedSex &&
+                  p["Âge"] === selectedAge,
+              );
+              return `${deptName} : ${popData.Valeur}`;
+            },
+            tip: true,
+          }),
+        ],
+      });
 
-    listeEtablissements.forEach((etablissement) => {
-      L.marker([etablissement.lat, etablissement.lon])
-        .addTo(map)
-        .bindPopup(etablissement.name);
+      plotContainer.replaceChildren(plot);
+    };
+
+    elmYear.addEventListener("change", () => {
+      selectedYear = Number(elmYear.value);
+      renderPlot();
     });
+
+    renderPlot();
   </script>
 </Layout>
