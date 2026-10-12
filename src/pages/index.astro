@@ -1,21 +1,27 @@
 ---
-import PlotFigure from "../components/PlotFigure.astro";
+import "leaflet/dist/leaflet.css";
 import Layout from "../layouts/Layout.astro";
-import * as Plot from "@observablehq/plot";
-import penguins from "../assets/penguins.json";
 ---
 
 <Layout>
-  <h1 class="text-2xl">Test Astro et Plot (Observablehq)</h1>
-  <PlotFigure
-    options={{
-      marks: [
-        Plot.dot(penguins, {
-          x: "culmen_length_mm",
-          y: "culmen_depth_mm",
-          stroke: "species",
-        }),
-      ],
-    }}
-  />
+  <h1 class="text-2xl">Liste des établissements</h1>
+  <div id="map" style="height: 600px;"></div>
+
+  <script>
+    import listeEtablissements from "../assets/ListeEtablissement.json";
+    import L from "leaflet";
+
+    const map = L.map("map").setView([46.6033, 1.883], 6);
+
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    listeEtablissements.forEach((etablissement) => {
+      L.marker([etablissement.lat, etablissement.lon])
+        .addTo(map)
+        .bindPopup(etablissement.name);
+    });
+  </script>
 </Layout>
