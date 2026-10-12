@@ -5,11 +5,15 @@ import populationMain from "../assets/populationmain.json";
 const listePeriode = [
   ...new Set(populationMain?.map((d) => d.Période)),
 ].reverse();
+const listeAge = [...new Set(populationMain?.map((d) => d["Âge"]))].reverse();
 ---
 
 <Layout>
   <select id="periode">
     {listePeriode.map((p, i) => <option selected={i === 0}>{p}</option>)}
+  </select>
+  <select id="age">
+    {listeAge.map((a, i) => <option selected={i === 0}>{a}</option>)}
   </select>
   <div id="plot"></div>
 
@@ -19,10 +23,11 @@ const listePeriode = [
     import populationMain from "../assets/populationmain.json";
 
     const elmYear = document.getElementById("periode") as HTMLSelectElement;
+    const elmAge = document.getElementById("age") as HTMLSelectElement;
     const plotContainer = document.getElementById("plot") as HTMLDivElement;
     let selectedYear = Number(elmYear.value);
     let selectedSex = "Total";
-    let selectedAge = "Total";
+    let selectedAge = elmAge.value;
 
     const renderPlot = () => {
       const plot = Plot.plot({
@@ -73,6 +78,11 @@ const listePeriode = [
 
     elmYear.addEventListener("change", () => {
       selectedYear = Number(elmYear.value);
+      renderPlot();
+    });
+
+    elmAge.addEventListener("change", () => {
+      selectedAge = elmAge.value;
       renderPlot();
     });
 
